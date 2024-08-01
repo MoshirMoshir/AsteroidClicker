@@ -18,9 +18,19 @@ asteroid_images = {
     'Candy': cv2.imread('special_2.png', cv2.IMREAD_GRAYSCALE),
     'Upgrade': cv2.imread('special_3.png', cv2.IMREAD_GRAYSCALE),
     'Fuel': cv2.imread('special_4.png', cv2.IMREAD_GRAYSCALE),
-    'Overcharge': cv2.imread('special_5.png', cv2.IMREAD_GRAYSCALE)
+    'Overcharge': cv2.imread('special_5.png', cv2.IMREAD_GRAYSCALE),
+    'Multiplier': cv2.imread('special_6.png', cv2.IMREAD_GRAYSCALE)
 }
+
+secondary_images = {
+    'Big_1': cv2.imread('big_1.png', cv2.IMREAD_GRAYSCALE),
+    'Big_2': cv2.imread('big_2.png', cv2.IMREAD_GRAYSCALE),
+    'Small_1': cv2.imread('small_1.png', cv2.IMREAD_GRAYSCALE),
+    'Small_2': cv2.imread('small_2.png', cv2.IMREAD_GRAYSCALE)
+}
+
 reference_images_np = {key: np.array(img) for key, img in asteroid_images.items()}
+secondary_images_np = {key: np.array(img) for key, img in secondary_images.items()}
 
 # Scale of asteroids for each zoom level (small and big)
 scale_factors = [0.2, 0.25, 0.4, 0.5, 0.9]
@@ -51,7 +61,7 @@ def find_and_click():
         best_scale = None
         best_type = None
 
-        # Iterate over each reference image and scales
+        # Primary check: Iterate over each reference image and scales
         for asteroid_type, reference_image_np in reference_images_np.items():
             with ThreadPoolExecutor() as executor:
                 results = list(executor.map(lambda scale: match_template(scale, screenshot_gray, reference_image_np), scale_factors))
@@ -71,24 +81,55 @@ def find_and_click():
             center_x = int((start_x + reference_width * best_scale / 2) / downscale_factor)
             center_y = int((start_y + reference_height * best_scale / 2) / downscale_factor)
 
-            # Mouse interface
-            for i in range(5):
-                logging.debug(f'Clicking on {best_type} asteroid at ({center_x}, {center_y})')
+            # Click five times at the identified location
+            logging.debug(f'Clicking on {best_type} asteroid at ({center_x}, {center_y})')
+            mouse.position = (center_x, center_y)
+            mouse.click(Button.left, 5)
+
+            if keyboard.is_pressed('q'):
+                logging.warning('Stopping program as "q" was pressed.')
+                return False
+
+            logging.info(f'Destroyed {best_type} asteroid')
+            return True
+        else:
+            logging.warning("Asteroid not found, checking secondary images")
+            # Secondary check: Iterate over each secondary image and scales
+            for asteroid_type, reference_image_np in secondary_images_np.items():
+                with ThreadPoolExecutor() as executor:
+                    results = list(executor.map(lambda scale: match_template(scale, screenshot_gray, reference_image_np), scale_factors))
+
+                # Check if we have a new best match
+                for max_val, max_loc, scale in results:
+                    if max_val > best_val:
+                        best_val = max_val
+                        best_loc = max_loc
+                        best_scale = scale
+                        best_type = asteroid_type
+
+            if best_val > 0.7:  # Confidence Value of match for secondary images
+                logging.debug(f'{best_type.capitalize()} found at scale {best_scale} with match value {best_val}')
+                start_x, start_y = best_loc
+                reference_height, reference_width = secondary_images_np[best_type].shape[:2]
+                center_x = int((start_x + reference_width * best_scale / 2) / downscale_factor)
+                center_y = int((start_y + reference_height * best_scale / 2) / downscale_factor)
+
+                # Click five times at the identified location
+                logging.debug(f'Clicking on {best_type} at ({center_x}, {center_y})')
                 mouse.position = (center_x, center_y)
-                mouse.click(Button.left, 1)
-                logging.debug(f'Clicked {i + 1} times.')
+                mouse.click(Button.left, 5)
 
                 if keyboard.is_pressed('q'):
                     logging.warning('Stopping program as "q" was pressed.')
                     return False
 
-            logging.info(f'Destroyed {best_type} asteroid')
-            return True
-        else:
-            logging.warning("Asteroid not found")
-            return True
+                logging.info(f'Destroyed {best_type}')
+                return True
+            else:
+                logging.warning("No secondary asteroids found")
+                return True
     except Exception as e:
-        logging.error(f"Error occurred: {e}")
+        logging.error(f"Error occurred in find_and_click: {e}")
         return True
 
 # Main loop

@@ -86,6 +86,11 @@ def find_and_click():
             mouse.position = (center_x, center_y)
             mouse.click(Button.left, 5)
 
+            # Move the mouse out of the way
+            screen_width, screen_height = pyautogui.size()
+            mouse.position = (screen_width / 2, screen_height - 10)
+            logging.debug('Mouse moved out of the way.')
+
             if keyboard.is_pressed('q'):
                 logging.warning('Stopping program as "q" was pressed.')
                 return False
@@ -118,6 +123,11 @@ def find_and_click():
                 logging.debug(f'Clicking on {best_type} at ({center_x}, {center_y})')
                 mouse.position = (center_x, center_y)
                 mouse.click(Button.left, 5)
+
+                # Move the mouse out of the way
+                screen_width, screen_height = pyautogui.size()
+                mouse.position = (screen_width / 2, screen_height - 10)
+                logging.debug('Mouse moved out of the way.')
 
                 if keyboard.is_pressed('q'):
                     logging.warning('Stopping program as "q" was pressed.')

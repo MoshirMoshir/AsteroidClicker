@@ -4,6 +4,7 @@ import numpy as np
 import logging
 import keyboard
 from concurrent.futures import ThreadPoolExecutor
+from pynput.mouse import Controller, Button
 import sys
 
 # Check if 'debug' is in command line arguments
@@ -12,14 +13,17 @@ logging.basicConfig(level=logging.DEBUG if debug_mode else logging.WARNING, form
 
 # Load the reference images and convert them to grayscale numpy arrays
 asteroid_images = {
-    'Normal': cv2.imread('asteroid.png', cv2.IMREAD_GRAYSCALE),
+    'normal': cv2.imread('asteroid.png', cv2.IMREAD_GRAYSCALE),
     'Cache': cv2.imread('special_1.png', cv2.IMREAD_GRAYSCALE),
-    'Candy': cv2.imread('special_2.png', cv2.IMREAD_GRAYSCALE),
+    'Candy': cv2.imread('special_2.png', cv2.IMREAD_GRAYSCALE)
 }
 reference_images_np = {key: np.array(img) for key, img in asteroid_images.items()}
 
 # Define the range of scales to search for each asteroid type
 scale_factors = [0.2, 0.25, 0.4, 0.5, 0.9]
+
+# Initialize the mouse controller
+mouse = Controller()
 
 # Function to match the template at a specific scale for a specific asteroid type
 def match_template(scale, screenshot, reference_image_np):
@@ -64,9 +68,11 @@ def find_and_click():
             center_x = int((start_x + reference_width * best_scale / 2) / downscale_factor)
             center_y = int((start_y + reference_height * best_scale / 2) / downscale_factor)
 
+            # Simulate mouse clicks without moving the cursor
             for i in range(4):
                 logging.debug(f'Clicking on {best_type} asteroid at ({center_x}, {center_y})')
-                pyautogui.click(center_x, center_y)
+                mouse.position = (center_x, center_y)
+                mouse.click(Button.left, 1)
                 logging.debug(f'Clicked {i + 1} times.')
 
                 if keyboard.is_pressed('q'):

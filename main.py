@@ -7,33 +7,33 @@ from concurrent.futures import ThreadPoolExecutor
 from pynput.mouse import Controller, Button
 import sys
 
-# Check if 'debug' is in command line arguments
+# Check for debug mode
 debug_mode = 'debug' in sys.argv
 logging.basicConfig(level=logging.DEBUG if debug_mode else logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load the reference images and convert them to grayscale numpy arrays
 asteroid_images = {
-    'normal': cv2.imread('asteroid.png', cv2.IMREAD_GRAYSCALE),
+    'Normal': cv2.imread('asteroid.png', cv2.IMREAD_GRAYSCALE),
     'Cache': cv2.imread('special_1.png', cv2.IMREAD_GRAYSCALE),
     'Candy': cv2.imread('special_2.png', cv2.IMREAD_GRAYSCALE),
     'Upgrade': cv2.imread('special_3.png', cv2.IMREAD_GRAYSCALE)
 }
 reference_images_np = {key: np.array(img) for key, img in asteroid_images.items()}
 
-# Define the range of scales to search for each asteroid type
+# Scale of asteroids for each zoom level (small and big)
 scale_factors = [0.2, 0.25, 0.4, 0.5, 0.9]
 
 # Initialize the mouse controller
 mouse = Controller()
 
-# Function to match the template at a specific scale for a specific asteroid type
+# Function to match the template at a specific scale for each image
 def match_template(scale, screenshot, reference_image_np):
     resized_reference = cv2.resize(reference_image_np, (0, 0), fx=scale, fy=scale)
     result = cv2.matchTemplate(screenshot, resized_reference, cv2.TM_CCOEFF_NORMED)
     _, max_val, _, max_loc = cv2.minMaxLoc(result)
     return max_val, max_loc, scale
 
-# Function to find and click on all asteroids
+# Function to find and click asteroids
 def find_and_click():
     logging.debug('Finding Asteroids...')
     try:
@@ -62,14 +62,14 @@ def find_and_click():
                     best_scale = scale
                     best_type = asteroid_type
 
-        if best_val > 0.7:  # Adjust threshold as needed
+        if best_val > 0.7:  # Confidence Value of match
             logging.debug(f'{best_type.capitalize()} asteroid found at scale {best_scale} with match value {best_val}')
             start_x, start_y = best_loc
             reference_height, reference_width = reference_images_np[best_type].shape[:2]
             center_x = int((start_x + reference_width * best_scale / 2) / downscale_factor)
             center_y = int((start_y + reference_height * best_scale / 2) / downscale_factor)
 
-            # Simulate mouse clicks without moving the cursor
+            # Mouse interface
             for i in range(4):
                 logging.debug(f'Clicking on {best_type} asteroid at ({center_x}, {center_y})')
                 mouse.position = (center_x, center_y)

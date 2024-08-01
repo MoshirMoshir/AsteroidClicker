@@ -16,7 +16,9 @@ asteroid_images = {
     'Normal': cv2.imread('asteroid.png', cv2.IMREAD_GRAYSCALE),
     'Cache': cv2.imread('special_1.png', cv2.IMREAD_GRAYSCALE),
     'Candy': cv2.imread('special_2.png', cv2.IMREAD_GRAYSCALE),
-    'Upgrade': cv2.imread('special_3.png', cv2.IMREAD_GRAYSCALE)
+    'Upgrade': cv2.imread('special_3.png', cv2.IMREAD_GRAYSCALE),
+    'Fuel': cv2.imread('special_4.png', cv2.IMREAD_GRAYSCALE),
+    'Overcharge': cv2.imread('special_5.png', cv2.IMREAD_GRAYSCALE)
 }
 reference_images_np = {key: np.array(img) for key, img in asteroid_images.items()}
 
@@ -70,7 +72,7 @@ def find_and_click():
             center_y = int((start_y + reference_height * best_scale / 2) / downscale_factor)
 
             # Mouse interface
-            for i in range(4):
+            for i in range(5):
                 logging.debug(f'Clicking on {best_type} asteroid at ({center_x}, {center_y})')
                 mouse.position = (center_x, center_y)
                 mouse.click(Button.left, 1)
